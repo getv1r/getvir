@@ -1,0 +1,91 @@
+case $LANGUAGE in
+ru)
+	help="Использование: getvir [ОПЦИЯ] [АРГУМЕНТ]
+По умолчанию происходит сканирование в текущем каталоге с включенной опцией -c (поиск критических уязвимостей).
+Пример: getvir -m -d /var/www -L
+
+Выбор уровня сканирования:
+  -c                  critical level. Поиск критических уязвимостей. По умолчанию включен.
+  -m                  medium level. Поиск опасного кода. По умолчанию выключен.
+  -l                  low level. Поиск подозрительного кода. По умолчанию выключен.
+  -z                  zero level. Поиск тестовыми сигнатурами. По умолчанию выключен.
+  -I [signature_ID]   сканирование указанной сигнатурой.
+
+Фильтры поиска:
+  -t [days]           фильтр по времени изменения файлов. В качестве аргумента указывается количество дней.
+  -d [patch]          путь для проверки. Поддерживаются относительные и абсолютные пути.
+
+Управление выводом:
+  -L                  логирование процесса сканирования. По умолчанию выключено.
+  
+Разное:
+  -h                  вывод справки на экран."
+
+	php001="создание списка PHP файлов."
+	php002="PHP файлов не найдено!"
+
+	js001="создание списка JavaScript файлов."
+	js002="JavaScript файлов не найдено!"
+
+	ht001="создание списка .htaccess файлов."
+	ht002=".htaccess файлов не найдено!"
+
+	tpl001="создание списка *.tpl файлов."
+	tpl002="*.tpl файлов не найдено!"
+
+	base001="База сигнатур повреждена. Уровень сканирования"
+	base002="не существует."
+
+	check001="Неверный аргумент"
+	check002="для опции"
+
+	log001="Результат сканирования записан в файл логирования:"
+
+	all001="выполнено."
+	all002="Начало сканирования."
+	all004="начало работы программы."
+	all005="сканирование завершено."
+	all006="Найдено файлов:"
+;;
+
+##################################################################################
+
+en)
+	help="Options:
+  -h   displays help getvir.
+  -t [days]   english translate.
+  -t [days]   the last time the file changes.
+  -c   enable / disable scan at the level of CRITICAL.
+  -m   enable / disable scan at the level of MEDIUM.
+  -l   enable / disable scan at the level of LOW.
+  -z   enable / disable scan at the level of ZERO.
+  -L   enable / disable the creation of the log.
+  -I [signature_ID]   scan the specified signature."
+
+	php001="create a list of JavaScript files."
+	php002="PHP files not found!"
+
+	js001="create a list of PHP files."
+	js002="JavaScript files not found!"
+
+	ht001="create a list of .htaccess files."
+	ht002=".htaccess files not found!"
+
+	tpl001="create a list of *.tpl files."
+	tpl002="*.tpl files not found!"
+
+	base001="Signature database is corrupted. Level"
+	base002="does not exist."
+
+	check001="Unknow argument"
+	check002="for option"
+
+	log001="The result of the scan is recorded in the file:"
+
+	all001="completed."
+	all002="Start scanning."
+	all004="getting started."
+	all005="scanning completed."
+	all006="Found files:"
+;;
+esac

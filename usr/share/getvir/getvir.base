@@ -1,0 +1,26 @@
+##GV201501280400##
+2014-PHP-EVAL01#поиск потенциально опасной функции eval()#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'eval([[:space:]])*\(' $PHP_LIST ) fi#2
+2014-PHP-EVAL02#поиск исполнения кодированного алгоритмом base64 или str_rot13 кодa функцией eval()#if [[ -n $PHP_LIST ]]; then ( grep -Eni 'eval([[:space:]])*\(([[:space:]])*base64_decode|eval([[:space:]])*\(([[:space:]])*str_rot13' $PHP_LIST ) fi#3
+2014-PHP-EVAL03#поиск выполнения комбинированно кодированного алгоритмами str_rot13 и base64 кода функцией eval()#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'eval([[:space:]])*\(([[:space:]])*base64_decode([[:space:]])*\(([[:space:]])*str_rot13|eval([[:space:]])*\(([[:space:]])*str_rot13([[:space:]])*\(([[:space:]])*base64_decode' $PHP_LIST ) fi#3
+2014-PHP-EVAL04#поиск выполнения загрузки файлов на сервер через eval()#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'eval([[:space:]])*\(([[:space:]])*\$_POST\[' $PHP_LIST ) fi#3
+2014-PHP-GZ0001#поиск функций выполняющих дикопрессию#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'gzuncompress([[:space:]])*\(|gzinflate([[:space:]])*\(' $PHP_LIST ) fi#1
+2014-PHP-SHEL01#поиск функции исполнения Shell-скрипта#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'shell_exec([[:space:]])*\(' $PHP_LIST ) fi#2
+2014-PHP-ALL001#поиск длинных строк (>=200 символов)#TEMP_IFS=$IFS ; IFS=$DEF_IFS ; res="" ; res_temp="" ; for ff in `find $_PATH -iname "*.php"` ; do res_temp=`cat "$ff" | tr '\n' ' ' | sed -e 's/\.\s*//g' | grep -Eo '[^\ ]{200,}'`; if [[ -n $res_temp ]]; then res+="$ff\n"; fi ; done; IFS=$TEMP_IFS ; echo -e "$res"#3
+2014-PHP-ALL002#поиск потенциально опасных функций require(), require_once(), include(), include_once() - возможно подключение файла с вредоносным кодом#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'require_once([[:space:]])*\(|require([[:space:]])*\(|include_once([[:space:]])*\(|include([[:space:]])*\(' $PHP_LIST ) fi#1
+2014-PHP-ALL003#поиск потенциально опасных функций usort(), uasort(), uksort() - возможно скрытое выполнение кода#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'usort([[:space:]])*\(|uasort([[:space:]])*\(|uksort([[:space:]])*\(' $PHP_LIST ) fi#1
+2014-PHP-STRT01#поиск функции кодирования / декодирования алгоритмом str_rot13#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'str_rot13([[:space:]])*\(' $PHP_LIST ) fi#1
+2014-PHP-BS6401#поиск функции декодирования алгоритмом base64#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'base64_decode([[:space:]])*\(' $PHP_LIST ) fi#1
+2014-PHP-CRFN01#поиск потенциально опасной функции create_function()#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'create_function([[:space:]])*\(' $PHP_LIST ) fi#2
+2014-PHP-EXTR01#поиск передачи параметров через функцию extract($_REQUEST)#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'extract([[:space:]])*\(([[:space:]])*\$_REQUEST' $PHP_LIST ) fi#3
+2014-PHP-PRRP01#поиск потенциально опасной функции preg_replace()#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'preg_replace([[:space:]])*\(' $PHP_LIST ) fi#1
+2014-PHP-PRRP02#поиск выполнения кода через preg_replace('/.*/e')#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni "preg_replace([[:space:]])*\(([[:space:]])*[\"|']\/\.\*\/e[\"|']" $PHP_LIST ) fi#3
+2014-PHP-PRRP03#поиск e модификатора '/.*/e', используемого для выполнения кода в функции preg_replace()#if [[ -n "$PHP_LIST" ]]; then ( grep -n "[\"|']\/\.\*\/e[\"|']" $PHP_LIST ) fi#3
+2014-PHP-PRRP04#поиск выполнения кода через preg_replace_callback('/.*/') #if [[ -n "$PHP_LIST" ]]; then ( grep -Eni "preg_replace_callback([[:space:]])*\(([[:space:]])*[\"|']\/\.\*\/[\"|']" $PHP_LIST ) fi#3
+2014-PHP-PRRP05#поиск модификатора '/.*/', используемого для выполнения кода в функции preg_replace_callback()#if [[ -n "$PHP_LIST" ]]; then ( grep -n "[\"|']\/\.\*\/[\"|']" $PHP_LIST ) fi#3
+2014-PHP-PRRP06#поиск потенциально опасной функции preg_replace_callback()#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'preg_replace_callback([[:space:]])*\(' $PHP_LIST ) fi#1
+2014-PHP-FGET01#поиск потенциально опасной функции file_get_contents()#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'file_get_contents([[:space:]])*\(' $PHP_LIST ) fi#1
+2014-PHP-EXEC01#поиск потенциально опасной функции exec() без проверки аргумента функцией escapeshellcmd()#if [[ -n "$PHP_LIST" ]]; then ( grep -Evi '\(([[:space:]])*escapeshellcmd([[:space:]])*\('  $PHP_LIST | grep -Ei '[^_]exec([[:space:]])*\(' ) fi#1
+2014-PHP-NPHP01#поиск файлов с расширением НЕ *.php, но содержащими PHP код#grep -ElHzi '<\?php' -r $_PATH --exclude='*.php'#2
+2014-PHP-ASRT01#поиск потенциально опасной функции assert() - возможно скрытое выполнение кода#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'assert([[:space:]])*\(' $PHP_LIST ) fi#1
+2014-PHP-ARMP01#поиск потенциально опасной функции array_map()#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'array_map([[:space:]])*\(' $PHP_LIST ) fi#1
+2014-PHP-EXIF01#поиск функции exif_read_data(), считывающей мета-данные изображений, способные содержать вредоносный код#if [[ -n "$PHP_LIST" ]]; then ( grep -Eni 'exif_read_data([[:space:]])*\(' $PHP_LIST ) fi#1
