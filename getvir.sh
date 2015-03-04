@@ -145,6 +145,9 @@ function Processing_Base(){
 
 	# Read from signatures database.
 	while read -r uid name code level; do
+		if [[ -z $uid && -z $name && -z $code ]]; then
+			continue; # LICENSE
+		fi
 		if [[ -z $uid && -z $name && -z $level ]]; then
 			_BASE_VERSION=$code
 			Print_String "Версия: $_BASE_VERSION."
