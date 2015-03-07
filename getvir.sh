@@ -33,14 +33,14 @@ declare -r _START_SCAN="$(date +%Y-%m-%d_%H-%M-%S)"
 # Default scanning path ( option -d ).
 _PATH=$DIRECTORY
 # Root directory of log files.
-dir_log=$DIRECTORY/var/log/getvir
+dir_log="$DIRECTORY/var/log/getvir"
 # Root directory of signatures database.
-getvir_base=$DIRECTORY/usr/share/getvir/getvir.base
+getvir_base="$DIRECTORY/usr/share/getvir/getvir.base"
 # The path to the Localization file.
-lang_path=$DIRECTORY/usr/share/getvir/getvir.translate
+lang_path="$DIRECTORY/usr/share/getvir/getvir.translate"
 
 # Enable config file
-source $DIRECTORY/etc/getvir.conf
+source "$DIRECTORY/etc/getvir.conf""
 # Enable Localizatio file
 source "$lang_path"
 
