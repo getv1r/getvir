@@ -40,7 +40,7 @@ getvir_base="$DIRECTORY/usr/share/getvir/getvir.base"
 lang_path="$DIRECTORY/usr/share/getvir/getvir.translate"
 
 # Enable config file
-source "$DIRECTORY/etc/getvir.conf""
+source "$DIRECTORY/etc/getvir.conf"
 # Enable Localizatio file
 source "$lang_path"
 
