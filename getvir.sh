@@ -107,12 +107,12 @@ function Php_List(){
 	Print_String "[$(date +%Y/%m/%d\ %H:%M:%S)]: $php001"
 	# If the argument of the -t option is specified and is correct.
 	if [[ $mtime > 0 ]];then
-		for a in `find $_PATH -mtime -$mtime -daystart -type f -iname '*.php'`; do
+		for a in `find $_PATH -mtime -$mtime -daystart -type f -regex ".*\.\(php\|phps\|phtml\|php4\|php5\|htm\|html\)"`; do
 			PHP_LIST+="$a#"
 			let "count_files += 1"
 		done
 	else
-		for a in `find $_PATH -iname "*.php"`;do
+		for a in `find $_PATH -type f -regex ".*\.\(php\|phps\|phtml\|php4\|php5\|htm\|html\)"`;do
 			PHP_LIST+="$a#"
 			let "count_files += 1"
 		done
