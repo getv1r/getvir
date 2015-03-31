@@ -1,4 +1,4 @@
-f#!/bin/bash 
+#!/bin/bash 
 
 # Copyright 2015 getvir.org e-mail: dev@getvir.org
 #
