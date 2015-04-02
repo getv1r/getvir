@@ -30,8 +30,7 @@ declare -r _VERSION="\033[1mGETVIR version 0.5 by GETVIR.ORG\033[0m"
 declare -r _START_SCAN="$(date +%Y-%m-%d_%H-%M-%S)"
 
 
-# Default scanning path ( option -d ).
-_PATH=$DIRECTORY
+
 # Root directory of log files.
 dir_log="$DIRECTORY/log/"
 # Root directory of signatures database.
@@ -105,6 +104,8 @@ function Php_List(){
 	local count_files=0
 
 	Print_String "[$(date +%Y/%m/%d\ %H:%M:%S)]: $php001"
+	Print_String "I will find it  in $_PATH"
+
 	# If the argument of the -t option is specified and is correct.
 	if [[ $mtime > 0 ]];then
 		for a in `find $_PATH -mtime -$mtime -daystart -type f -regex ".*\.\(php\|phps\|phtml\|php4\|php5\|htm\|html\)"`; do
@@ -420,7 +421,7 @@ function Check_Mtime(){
 function Create_Log_File(){
 	if [[ $log_enable = "TRUE" ]]; then
 		url_log="$dir_log/getvir_$_START_SCAN.log"
-		echo -e "$data_log" >> $url_log
+		echo -e "$data_log" >> $url_log  # ????????????? WTF
 		chmod 644 $url_log
 		echo -e "\n$log001\n$url_log"
 	fi
@@ -443,16 +444,41 @@ function Check_ID(){
 }
 
 #################################################################################################
+
+
+
+#until [ -z "$1" ]  
+#do
+#  if [ -d "$1" ]; then
+#  _PATH=$1
+#  fi
+#  shift
+#done
+
+
+for n in $@
+do
+  if [ -d "$n" ]; then
+  _PATH=$n
+  fi  
+done
+# echo "_PATH now is $_PATH"
+
+#=============================
+
+
 while getopts ":hd:t:cmlzLI:" opt;
 do
+	      
 	case $opt in
-		h) # Print help screen
+
+        h) # Print help screen
 			Print_Help
 			exit 0
 		;;
-		d) # Checking the argument passed to the option -d
-			Check_Dir
-		;;
+#		d) # Checking the argument passed to the option -d
+#			Check_Dir
+#		;;
 		t) # Checking the argument passed to the option -t
 			Check_Mtime
 		;;
@@ -498,8 +524,9 @@ do
 		*) # An invalid option
 			Print_Help
 		;;
-	esac
+		esac
 done
+
 shift $(($OPTIND - 1))
 
 ##################################################################################################
