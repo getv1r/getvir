@@ -252,16 +252,23 @@ function Create_List_Files_With_Php_Code(){
 # обрабатываем базу алгоритмов поиска, сохраняем информацию в ОЗУ
 function Read_Base(){
 	IFS=
-	while read str_base; do
+	local trigger=0
+	while read -r str_base; do
 		# отсеить строку с версией базы
-		if [[ "`echo $str_base | grep '_BASE_VERSION'`" == "" ]];then
+		if [[ "`echo $str_base | grep '_BASE_VERSION'`" == "" && "$str_base" != "" ]];then
 			# сортируем данные алгоритма по массивав
-			array_split_ID[$count_algorithm]=`echo $str_base | awk '{split($0,a,"##"); print a[1]}'`
-			array_split_TEXT[$count_algorithm]=`echo $str_base | awk '{split($0,a,"##"); print a[2]}'`
-			array_split_CODE[$count_algorithm]=`echo $str_base | awk '{split($0,a,"##"); print a[3]}'`
-			array_split_SCORE[$count_algorithm]=`echo $str_base | awk '{split($0,a,"##"); print a[4]}'`
-			
-			count_algorithm=$(( $count_algorithm+1 ))
+			if [[ $trigger -eq 0 ]]; then
+				array_split_ID[$count_algorithm]=`echo $str_base | awk '{split($0,a,"##"); print a[1]}'`
+				array_split_TEXT[$count_algorithm]=`echo $str_base | awk '{split($0,a,"##"); print a[2]}'`
+				array_split_SCORE[$count_algorithm]=`echo $str_base | awk '{split($0,a,"##"); print a[3]}'`
+				
+				trigger=1
+			else
+				array_split_CODE[$count_algorithm]="$str_base"
+				
+				count_algorithm=$(( $count_algorithm+1 ))
+				trigger=0
+			fi
 		fi
 	done < "$getvir_base"
 	
