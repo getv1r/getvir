@@ -212,7 +212,7 @@ function Create_Lists(){
 function Create_List_All_Files(){
 	# если задан промежуток времени
 	if [[ $mtime > 0 ]];then
-		find $_PATH -mtime -$mtime -type f >> "$list_all_files"
+		find $_PATH -mtime -$mtime -type f >> "$list_all_files"rm -f 
 	else
 		find $_PATH -type f >> "$list_all_files"
 	fi
@@ -232,19 +232,21 @@ function Create_List_Files_With_Php_Code(){
 	count_files_with_php_code=`wc -l "$list_files_with_php_code" | awk '{print $1}'`
 	Print_String "$(Design "BOLD" "Количество файлов с расширением, допускающим использование PHP кода:") $(Design "MB" "$count_files_with_php_code")"
 	
-	# фильтруем оставшиеся по содержимому
-	while read file_path; do
-		if [[ "`echo $file_path |egrep -i "*\.php$|*\.phps$|*\.phtml$|*\.php4$|*\.php5$|*\.htm$|*\.html$|*\.pl$"`" == "" ]] && [[ "`grep -ilsr '<?php' "$file_path"`" != "" ]]; then
-			echo "$file_path" >> "$list_files_with_php_code"
-			echo "$file_path:1" >> "$total_scan_result"
-		fi
-	done < "$list_all_files"
-	
-	local count2=`wc -l "$total_scan_result" | awk '{print $1}'`
-	count_files_with_php_code=$(( $count_files_with_php_code+$count2 ))
-	# выводим информацию:
-	Print_String "$(Design "BOLD" "Количество файлов с расширением, НЕ допускающим использование PHP кода, но содержащие его:") $(Design "MB" "$count2")"
-	Print_String "$(Design "RB" "-------------------------------------------------------------------------------------")"
+	if [[ "$PHP_NOPHP" == "TRUE" ]]; then
+		# фильтруем оставшиеся по содержимому
+		while read file_path; do
+			if [[ "`echo $file_path |egrep -i "*\.php$|*\.phps$|*\.phtml$|*\.php4$|*\.php5$|*\.htm$|*\.html$|*\.pl$"`" == "" ]] && [[ "`grep -ilsr '<?php' "$file_path"`" != "" ]]; then
+				echo "$file_path" >> "$list_files_with_php_code"
+				echo "$file_path:1:PHP-NOPHP" >> "$total_scan_result"
+			fi
+		done < "$list_all_files"
+				
+		local count2=`wc -l "$total_scan_result" | awk '{print $1}'`
+		count_files_with_php_code=$(( $count_files_with_php_code+$count2 ))
+		# выводим информацию:
+		Print_String "$(Design "BOLD" "Количество файлов с расширением, НЕ допускающим использование PHP кода, но содержащие его:") $(Design "MB" "$count2")"
+		Print_String "$(Design "RB" "-------------------------------------------------------------------------------------")"
+	fi
 }
 
 #-------------------------------------------------------------------------
@@ -311,9 +313,9 @@ function Search_Virus(){
 					# экранируем слэш в строке
 					file_path=`echo $file_path | sed 's|/|\\\/|g'`
 					# и суммируем баллы
-					sed -i "s/^$file_path:$old_score/$file_path:$new_score/g" $total_scan_result			
+					sed -i "s/^$file_path:$old_score:/$file_path:$new_score:${array_split_ID[$i]}\ /g" $total_scan_result			
 				else # если нет, то добавляем
-					echo "$file_path:${array_split_SCORE[$i]}" >> $total_scan_result
+					echo "$file_path:${array_split_SCORE[$i]}:${array_split_ID[$i]}" >> $total_scan_result
 				fi
 			fi
 		done < "$list_files_with_php_code"
