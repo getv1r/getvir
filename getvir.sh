@@ -33,9 +33,11 @@ ABSOLUTE_FILENAME=`readlink -e "$0"`
 DIRECTORY=`dirname "$ABSOLUTE_FILENAME"`
 
 _PATH=$DIRECTORY	# Default scanning path ( option -d ).
-_BASE_VERSION="NOT FOUND"
+STEP_ONE_BASE_VERSION="NOT FOUND"
+STEP_TWO_BASE_VERSION="NOT FOUND"
 dir_log="$DIRECTORY/var/log/getvir" # Root directory of log files.
-getvir_base="$DIRECTORY/usr/share/getvir/getvir.base"	# Root directory of signatures database.
+step_one_base="$DIRECTORY/usr/share/getvir/step_one.base"	# Root directory of step one database.
+step_two_base="$DIRECTORY/usr/share/getvir/step_two.base"	# Root directory of step two database.
 lang_path="$DIRECTORY/usr/share/getvir/getvir.translate"	# The path to the Localization file.
 
 source "$DIRECTORY/etc/getvir.conf"	# Enable config file
@@ -46,12 +48,11 @@ declare -r list_all_files="/tmp/getvir_${_START_SCAN}_list_all_files"
 declare -r list_files_with_php_code="/tmp/getvir_${_START_SCAN}_list_files_with_php_code"
 declare -r total_scan_result="$dir_log/${_START_SCAN}_total_scan_result"
 
-# создание временных файлов:
-touch "$list_all_files" "$list_files_with_php_code" "$total_scan_result"
+count_all_files=0
 count_files_with_php_code=0
 
-# массив, хранящий абсолютный полный путь временных файлов
-declare -a list_tmp_files=( "$list_all_files" "$list_files_with_php_code" "$total_scan_result" )
+# переменная, хранящая пути к временным файлам
+list_gc=""
 
 # файлс результатом сканирования:
 
@@ -63,24 +64,32 @@ declare -a array_split_SCORE
 
 #-------------------------------------------------------------------------
 
+# создаём нужные файлы
+function Create_Files(){
+	touch $*
+	Add_GC $*
+}
+
+#-------------------------------------------------------------------------
+
+# добавляем файлы в сборщик мусора
+function Add_GC(){
+	list_gc+=" $*"
+}
+
+
+#-------------------------------------------------------------------------
+
 # Show getvir command-line options.
 function Print_Help() {
-	echo -e "\033[1m$_VERSION\033[0m\n"
-	tput sgr0
+	Print_Titul
+	
 	echo -e "$help"
 }
 
 #-------------------------------------------------------------------------
 
-# Check options 
-if [[ $# -eq 0 && $critical = "FALSE" && $medium = "FALSE" && $low = "FALSE" && $zero = "FALSE" ]]; then
-	Print_Help
-	exit 0
-fi
-
-#-------------------------------------------------------------------------
-
-# Output text on the screen. Write text to a file log file. (write a log file)
+# Output text on the screen.
 function Print_String() {
 	echo -e "$1"
 	# If logging is enabled..
@@ -92,6 +101,28 @@ function Print_String() {
 		fi
 	fi
 } 
+
+#-------------------------------------------------------------------------
+
+# выводим приветствие
+function Step_One_Print_Titul(){
+	# выводим приветствие
+	Print_String "\n$(Design "BOLD" "$_VERSION")\n$(Design "RB" "===================================")\n"
+}
+
+#-------------------------------------------------------------------------
+
+# выводим на экран линию-разделитель
+function Print_Separator(){
+	Print_String "$(Design "RB" "-------------------------------------------------------------------------------------")"	
+}
+
+#-------------------------------------------------------------------------
+
+# выводим на экран линию-разделитель
+function Print_Separator_Two(){
+	Print_String "$(Design "RB" "=====================================================================================")"	
+}
 
 #-------------------------------------------------------------------------
 
@@ -165,97 +196,76 @@ function Design(){
 }
 
 #-------------------------------------------------------------------------
+# первая фаза - сканирование файлов
+function Step_One(){
+	# выводим приветствие
+	Step_One_Print_Titul
+	
+	# so1=начало работы программы
+	Print_String "$_START_SCAN: $so1."
+	
+	# подготовка к сканированию
+	Step_One_PreScanning
+	
+	# so2=ЭТАП 1
+	# so3=проверка файлов
+	Print_String "\n$(Design "MB" "$so2:") $(Design "BOLD" "$so3.")"
+	Print_Separator
+	
+	# начинаем сканирование
+	Search_Virus
+}
 
-# поэтапно запускаем процесс сканирования
-function Start_Scanning() {
-	Print_String "$(Design "RB" "-------------------------------------------------------------------------------------")"
-	Print_String "$(Design "BOLD" "Подгатовка к сканированию:")\n"
-	Print_String "$(Design "BOLD" "Путь для проверки")\n$(Design "MB" "$_PATH")"
+#-------------------------------------------------------------------------
+
+# подготовка к сканированию
+function Step_One_PreScanning(){
+	# выводим линию-разделитель
+	Print_Separator
+	
+	# ps1=Подгатовка к сканированию
+	Print_String "$(Design "BOLD" "$ps1:")\n"
+	# ps2=Путь для проверки
+	Print_String "$(Design "BOLD" "$ps2:")\n$(Design "MB" "$_PATH")"
 	
 	# получаем версию базы алгоритмов
-	Get_Base_Version
-	Print_String "$(Design "BOLD" "Версия базы алгоритмов поиска:") $(Design "MB" "$_BASE_VERSION")"
+	Get_Step_One_Base_Version
+	
+	# ps3=Версия базы алгоритмов поиска
+	Print_String "$(Design "BOLD" "$ps3:") $(Design "MB" "$STEP_ONE_BASE_VERSION")"
+	
 	# сортируем и сохраняем данные базы в ОЗУ
-	Read_Base
-	Print_String "$(Design "BOLD" "Количество алгоритмов поиска:") $(Design "MB" "$count_algorithm")"
+	Step_One_Read_Base
+	
+	# ps4=Количество алгоритмов поиска
+	Print_String "$(Design "BOLD" "$ps4:") $(Design "MB" "$count_algorithm")"
+	
 	# создаем все необходимые списки
 	Create_Lists
-	# запускаем сканирование
-	Search_Virus
 }
 
 
 #-------------------------------------------------------------------------
 
 # получаем версию базы алгоритмов
-function Get_Base_Version(){
-	local temp=`head -n 1 "$getvir_base"`
+function Get_Step_One_Base_Version(){
+	local temp=`head -n 1 "$step_one_base"`
 
-	if [[ "`echo $temp | grep -w  "_BASE_VERSION"`" != "" ]];then
-		_BASE_VERSION=${temp#*=}
+	if [[ "`echo $temp | grep -w  "STEP_ONE_BASE_VERSION"`" != "" ]];then
+		STEP_ONE_BASE_VERSION=${temp#*=}
 	fi
 }
 
-#-------------------------------------------------------------------------
-
-# создаем все необходимые списки
-function Create_Lists(){
-	# список всех объектов для проверки, удовлетворяющих начальным условиям
-	Create_List_All_Files
-	# список файлов содержащих и способных содержать PHP код
-	Create_List_Files_With_Php_Code	
-}
-
-#-------------------------------------------------------------------------
-
-# список всех объектов для проверки, удовлетворяющих начальным условиям
-function Create_List_All_Files(){
-	# если задан промежуток времени
-	if [[ $mtime > 0 ]];then
-		find $_PATH -mtime -$mtime -type f >> "$list_all_files"
-	else
-		find $_PATH -type f >> "$list_all_files"
-	fi
-	
-	local count=`wc -l "$list_all_files" | awk '{print $1}'`
-	Print_String "$(Design "BOLD" "Количество сканируемых файлов:") $(Design "MB" "$count")"
-}
-
-#-------------------------------------------------------------------------
-
-# список файлов содержащих и способных содержать PHP код
-function Create_List_Files_With_Php_Code(){
-	# фильтруем список по типу файлов
-	egrep -i "*\.php$|*\.phps$|*\.phtml$|*\.php4$|*\.php5$|*\.htm$|*\.html$|*\.pl$" $list_all_files >> "$list_files_with_php_code"
-	
-	# выводим информацию:
-	count_files_with_php_code=`wc -l "$list_files_with_php_code" | awk '{print $1}'`
-	Print_String "$(Design "BOLD" "Количество файлов с расширением, допускающим использование PHP кода:") $(Design "MB" "$count_files_with_php_code")"
-	
-	# фильтруем оставшиеся по содержимому
-	while read file_path; do
-		if [[ "`echo $file_path |egrep -i "*\.php$|*\.phps$|*\.phtml$|*\.php4$|*\.php5$|*\.htm$|*\.html$|*\.pl$"`" == "" ]] && [[ "`grep -ilsr '<?php' "$file_path"`" != "" ]]; then
-			echo "$file_path" >> "$list_files_with_php_code"
-			echo "$file_path:1" >> "$total_scan_result"
-		fi
-	done < "$list_all_files"
-	
-	local count2=`wc -l "$total_scan_result" | awk '{print $1}'`
-	count_files_with_php_code=$(( $count_files_with_php_code+$count2 ))
-	# выводим информацию:
-	Print_String "$(Design "BOLD" "Количество файлов с расширением, НЕ допускающим использование PHP кода, но содержащие его:") $(Design "MB" "$count2")"
-	Print_String "$(Design "RB" "-------------------------------------------------------------------------------------")"
-}
 
 #-------------------------------------------------------------------------
 
 # обрабатываем базу алгоритмов поиска, сохраняем информацию в ОЗУ
-function Read_Base(){
+function Step_One_Read_Base(){
 	IFS=
 	local trigger=0
 	while read -r str_base; do
 		# отсеить строку с версией базы
-		if [[ "`echo $str_base | grep '_BASE_VERSION'`" == "" && "$str_base" != "" ]];then
+		if [[ "`echo $str_base | grep 'STEP_ONE_BASE_VERSION'`" == "" && "$str_base" != "" ]];then
 			# сортируем данные алгоритма по массивав
 			if [[ $trigger -eq 0 ]]; then
 				array_split_ID[$count_algorithm]=`echo $str_base | awk '{split($0,a,"##"); print a[1]}'`
@@ -270,35 +280,121 @@ function Read_Base(){
 				trigger=0
 			fi
 		fi
-	done < "$getvir_base"
+	done < "$step_one_base"
 	
 	IFS=$DEF_IFS
 }
 
 #-------------------------------------------------------------------------
 
+# создаем все необходимые списки
+function Create_Lists(){
+	# список всех объектов для проверки, удовлетворяющих начальным условиям
+	Create_List_All_Files
+	# список файлов содержащих и способных содержать PHP код
+	Create_List_Files_With_Php_Code
+}
+
+#-------------------------------------------------------------------------
+
+# список всех объектов для проверки, удовлетворяющих начальным условиям
+function Create_List_All_Files(){
+	# если задан промежуток времени
+	if [[ $mtime > 0 ]];then
+		find $_PATH -mtime -$mtime -type f >> "$list_all_files"rm -f 
+	else
+		find $_PATH -type f >> "$list_all_files"
+	fi
+	
+	count_all_files=`wc -l "$list_all_files" | awk '{print $1}'`
+	
+	# text: Количество сканируемых файлов
+	Print_String "$(Design "BOLD" "$claf1:") $(Design "MB" "$count_all_files")"
+}
+
+#-------------------------------------------------------------------------
+
+# список файлов содержащих и способных содержать PHP код
+function Create_List_Files_With_Php_Code(){
+	# фильтруем список по типу файлов
+	egrep -i "*\.php$|*\.phps$|*\.phtml$|*\.php4$|*\.php5$|*\.htm$|*\.html$|*\.pl$" $list_all_files >> "$list_files_with_php_code"
+	
+	# выводим информацию:
+	count_files_with_php_code=`wc -l "$list_files_with_php_code" | awk '{print $1}'`
+	
+	# text: Количество файлов с расширением, допускающим использование PHP кода
+	Print_String "$(Design "BOLD" "$clfwpc1:") $(Design "MB" "$count_files_with_php_code")"
+	
+	# если в конфиге включена проверка по всем файлам
+	if [[ "$PHP_NOPHP" == "TRUE" ]]; then
+		
+		### progress bar ###
+		local progress_bar_count=0
+		local result=0
+		
+		while read file_path; do
+			# обновляем progress bar
+			progress_bar_count=$(( $progress_bar_count+1 ))
+			echo -ne "\r$(Design "BOLD" "$clfwpc2:") [$progress_bar_count/$count_all_files] $(Design "MB" "$result")"
+			
+			if [[ "`echo $file_path |egrep -i "*\.php$|*\.phps$|*\.phtml$|*\.php4$|*\.php5$|*\.htm$|*\.html$|*\.pl$"`" == "" ]] && [[ "`grep -ilsr '<?php' "$file_path"`" != "" ]]; then
+				
+				# обновляем progress bar
+				result=$(( $result+1 ))
+				echo -ne "\r$(Design "BOLD" "$clfwpc2:") [$progress_bar_count/$count_all_files] $(Design "MB" "$result")"
+				
+				echo "$file_path" >> "$list_files_with_php_code"
+				echo "$file_path:1:PHP-NOPHP" >> "$total_scan_result"
+			fi
+		done < "$list_all_files"
+		
+		echo -ne "\r$(Design "BOLD" "$clfwpc2:") $(Design "MB" "$result")                                         \n"
+					
+		count_files_with_php_code=$(( $count_files_with_php_code+$result ))
+		
+		# выводим информацию:
+		# clfwpc2=Количество файлов с расширением, НЕ допускающим использование PHP кода, но содержащие его
+		
+		Print_Separator
+	fi
+}
+
+#-------------------------------------------------------------------------
+
+# запускаем сканирование
 function Search_Virus(){
 	IFS=
+	
+	# по очереди проходим по всем алгоритмам поиска
 	for (( i=0; i < count_algorithm; i++ )); do
-# 		local text_count_algorithm=
+		
+		local result=0
+		
+		# вывод информации о заголовке
 		Print_String "\n$(Design "BOLD" "[$(( $i+1 ))/$count_algorithm] ") $(Design "MB" "${array_split_ID[$i]}")"
 		Print_String "$(Design "BOLD" "${array_split_TEXT[$i]}:")"
-		Print_String "$(Design "RB" "-------------------------------------------------------------------------------------")"
+		Print_Separator
 		
 		# временный файл для хранения результатов текущего алгоритма
 		local current_id_result_file="/tmp/${array_split_ID[$i]}_${_START_SCAN}"
-		touch "$current_id_result_file"
+		Create_Files $current_id_result_file
 		
 		# проверяем все файлы по очереди
 		local progress_bar_count=0
 		while read file_path; do
-			# progress bar
+			### progress bar ###
 			progress_bar_count=$(( $progress_bar_count+1 ))
-			echo -ne "\rПроверяется файл $progress_bar_count из $count_files_with_php_code"
+			# sv1=Проверяется файл
+			# sv2=из
+			echo -ne "\r$sv1 $progress_bar_count $sv2 $count_files_with_php_code [$(Design "MB" "$result")]"
 			
 			temp_result=`eval ${array_split_CODE[i]}`
 			# если в проверяемом файле найдена искомая комбинация
 			if [[ "$temp_result" != "" ]]; then
+				# обновляем progress bar
+				result=$(( $result+1 ))
+				echo -ne "\r$sv1 $progress_bar_count $sv2 $count_files_with_php_code [$(Design "MB" "$result")]"
+				
 				# то добавляем его во временный файл:
 				echo "$file_path" >> $current_id_result_file
 				
@@ -311,20 +407,24 @@ function Search_Virus(){
 					# экранируем слэш в строке
 					file_path=`echo $file_path | sed 's|/|\\\/|g'`
 					# и суммируем баллы
-					sed -i "s/^$file_path:$old_score/$file_path:$new_score/g" $total_scan_result			
+					sed -i "s/^$file_path:$old_score:/$file_path:$new_score:${array_split_ID[$i]}\ /g" $total_scan_result			
 				else # если нет, то добавляем
-					echo "$file_path:${array_split_SCORE[$i]}" >> $total_scan_result
+					echo "$file_path:${array_split_SCORE[$i]}:${array_split_ID[$i]}" >> $total_scan_result
 				fi
 			fi
 		done < "$list_files_with_php_code"
 		
 		local  current_id_result=`cat $current_id_result_file`
 		if [[ "$current_id_result" != "" ]]; then
-			Print_String "\n$(Design "RB" "Файлы, содержащие данную уязвимость:")"
+			
+			# sv3=Файлы, содержащие данную уязвимость
+			Print_String "\n$(Design "RB" "$sv3:")"
 			Print_String "$current_id_result"
 			
 		else
-			Print_String "\n$(Design "GNB" "Файлы, содержащие данную уязвимость, не найдены.")"
+			
+			# sv4=Файлы, содержащие данную уязвимость, не найдены
+			Print_String "\n$(Design "GNB" "$sv4.")"
 		fi
 		Print_String ""
 
@@ -332,6 +432,13 @@ function Search_Virus(){
 	
 	IFS=$DEF_IFS
 }
+
+#-------------------------------------------------------------------------
+
+function Clear_Temp_File(){
+	rm -f $list_gc
+}
+
 
 #-------------------------------------------------------------------------
 
@@ -344,20 +451,15 @@ function Check_Mtime(){
 
 #-------------------------------------------------------------------------
 
-# Enable / disable the creation of the log (option -L).
-function Create_Log_File(){
-	if [[ $log_enable = "TRUE" ]]; then
-		url_log="$dir_log/getvir_$_START_SCAN.log"
-		echo -e "$data_log" >> $url_log
-		chmod 644 $url_log
-		echo -e "\n$log001\n$url_log"
-	fi
-}
-
-#-------------------------------------------------------------------------
-
-
 #################################################################################################
+
+# Check options 
+if [[ $# -eq 0 ]]; then
+	Print_Help
+	exit 0
+	fi
+	
+#-------------------------------------------------------------------------
 
 # поиск и проверка на валидность пути
 for n in $@; do
@@ -367,7 +469,7 @@ for n in $@; do
 done
 
 
-while getopts ":ht:L" opt;
+while getopts ":ht:" opt;
 do
 	case $opt in
 		h) # Print help screen
@@ -376,13 +478,6 @@ do
 		;;
 		t) # Checking the argument passed to the option -t
 			Check_Mtime
-		;;
-		L) # Enable / disable logging file.
-			if [[ $log_enable = "FALSE" ]]; then log_enable="TRUE"
-				else log_enable="FALSE"; fi
-		;;
-		I)
-			Check_ID
 		;;
 		*) # An invalid option
 			Print_Helptotal_scan_result
@@ -393,16 +488,31 @@ shift $(($OPTIND - 1))
 
 ##################################################################################################
 
-# выводим приветствие
-Print_String "\n$(Design "BOLD" "$_VERSION")\n$(Design "RB" "===================================")\n\n$_START_SCAN: $all004"
 
-Start_Scanning
-Print_String "$(Design "RB" "-------------------------------------------------------------------------------------\n")"
-Print_String "$(date +%Y-%m-%d_%H-%M-%S): $all005"
-Create_Log_File
-Print_String "$(Design "BOLD" "Файл с результатами сканирования:")"
+### main #########################################################################################
+
+touch $total_scan_result
+Create_Files $list_all_files $list_files_with_php_code 
+
+# первый этап - сканирование
+Step_One
+
+
+Print_Separator
+
+# main2=сканирование завершено
+Print_String "$(date +%Y-%m-%d_%H-%M-%S): $main2."
+
+# main3=Файл с результатами сканирования
+Print_String "\n$(Design "BOLD" "$main3:")"
 echo $total_scan_result
 
-rm -f "$list_php_files $list_files_with_php_code"
+
+Print_String "\n$main4:"
+Print_Separator
+
+echo $list_gc | tr " " "\n"
+
+Clear_Temp_File
 
 exit 0
