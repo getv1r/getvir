@@ -34,12 +34,20 @@ declare -r DEF_IFS=$IFS		# Saving IFS default values ( '\t\n' ).
 ABSOLUTE_FILENAME=`readlink -e "$0"`
 DIRECTORY=`dirname "$ABSOLUTE_FILENAME"`
 
+<<<<<<< HEAD
 
 _PATH=$DIRECTORY	# Default scanning path.
 
 STEP_TWO_BASE_VERSION="NOT FOUND"
 dir_log="$DIRECTORY/var/log/getvir" # Root directory of log files.
 
+=======
+_PATH=$DIRECTORY	# Default scanning path ( option -d ).
+STEP_ONE_BASE_VERSION="NOT FOUND"
+STEP_TWO_BASE_VERSION="NOT FOUND"
+dir_log="$DIRECTORY/var/log/getvir" # Root directory of log files.
+step_one_base="$DIRECTORY/usr/share/getvir/step_one.base"	# Root directory of step one database.
+>>>>>>> 6dd81d9f946f402dd734075cd2a78da37dfcd307
 step_two_base="$DIRECTORY/usr/share/getvir/step_two.base"	# Root directory of step two database.
 lang_path="$DIRECTORY/usr/share/getvir/getvir.translate"	# The path to the Localization file.
 
@@ -54,6 +62,11 @@ declare -r list_all_files="/tmp/getvir_${_START_SCAN}_list_all_files"
 declare -r list_files_with_php_code="/tmp/getvir_${_START_SCAN}_list_files_with_php_code"
 declare -r total_scan_result="$dir_log/${_START_SCAN}_total_scan_result"
 
+<<<<<<< HEAD
+=======
+count_all_files=0
+count_files_with_php_code=0
+>>>>>>> 6dd81d9f946f402dd734075cd2a78da37dfcd307
 
 # переменная, хранящая пути к временным файлам
 list_gc=""
@@ -75,16 +88,37 @@ function Create_Files(){
 
 #-------------------------------------------------------------------------
 
+<<<<<<< HEAD
+# добавляем файлы в сборщик мусора
+function Add_GC(){
+	list_gc+=" $*"
+=======
+# создаём нужные файлы
+function Create_Files(){
+	touch $*
+	Add_GC $*
+>>>>>>> 6dd81d9f946f402dd734075cd2a78da37dfcd307
+}
+
+#-------------------------------------------------------------------------
+
+<<<<<<< HEAD
+# Show getvir command-line options.
+function Print_Help() {
+	Greeting
+=======
 # добавляем файлы в сборщик мусора
 function Add_GC(){
 	list_gc+=" $*"
 }
 
+
 #-------------------------------------------------------------------------
 
 # Show getvir command-line options.
 function Print_Help() {
-	Greeting
+	Print_Titul
+>>>>>>> 6dd81d9f946f402dd734075cd2a78da37dfcd307
 	
 	echo -e "$help"
 }
@@ -107,6 +141,28 @@ function Print_String() {
 ################################################################################################################
 # Функции оформления
 ################################################################################################################
+
+#-------------------------------------------------------------------------
+
+# выводим на экран линию-разделитель
+function Print_Separator(){
+	Print_String "$(Design "RB" "-------------------------------------------------------------------------------------")"	
+}
+
+#-------------------------------------------------------------------------
+
+# выводим на экран линию-разделитель
+function Print_Separator_Two(){
+	Print_String "$(Design "RB" "=====================================================================================")"	
+}
+
+#-------------------------------------------------------------------------
+
+# выводим приветствие
+function Step_One_Print_Titul(){
+	# выводим приветствие
+	Print_String "\n$(Design "BOLD" "$_VERSION")\n$(Design "RB" "===================================")\n"
+}
 
 #-------------------------------------------------------------------------
 
@@ -193,6 +249,7 @@ function Design(){
 	esac
 }
 
+<<<<<<< HEAD
 ################################################################################################################
 # 
 ################################################################################################################
@@ -208,10 +265,60 @@ function Greeting(){
 	Print_String " $(Design "BOLD" "#")   #\n"
 	
 # 	Print_String "\n$(Design "BOLD" "$_VERSION")\n$(Design "RB" "===================================")\n"
+=======
+#-------------------------------------------------------------------------
+# первая фаза - сканирование файлов
+function Step_One(){
+	# выводим приветствие
+	Step_One_Print_Titul
+	
+	# so1=начало работы программы
+	Print_String "$_START_SCAN: $so1."
+	
+	# подготовка к сканированию
+	Step_One_PreScanning
+	
+	# so2=ЭТАП 1
+	# so3=проверка файлов
+	Print_String "\n$(Design "MB" "$so2:") $(Design "BOLD" "$so3.")"
+	Print_Separator
+	
+	# начинаем сканирование
+	Search_Virus
 }
 
 #-------------------------------------------------------------------------
 
+# подготовка к сканированию
+function Step_One_PreScanning(){
+	# выводим линию-разделитель
+	Print_Separator
+	
+	# ps1=Подгатовка к сканированию
+	Print_String "$(Design "BOLD" "$ps1:")\n"
+	# ps2=Путь для проверки
+	Print_String "$(Design "BOLD" "$ps2:")\n$(Design "MB" "$_PATH")"
+	
+	# получаем версию базы алгоритмов
+	Get_Step_One_Base_Version
+	
+	# ps3=Версия базы алгоритмов поиска
+	Print_String "$(Design "BOLD" "$ps3:") $(Design "MB" "$STEP_ONE_BASE_VERSION")"
+	
+	# сортируем и сохраняем данные базы в ОЗУ
+	Step_One_Read_Base
+	
+	# ps4=Количество алгоритмов поиска
+	Print_String "$(Design "BOLD" "$ps4:") $(Design "MB" "$count_algorithm")"
+	
+	# создаем все необходимые списки
+	Create_Lists
+>>>>>>> 6dd81d9f946f402dd734075cd2a78da37dfcd307
+}
+
+#-------------------------------------------------------------------------
+
+<<<<<<< HEAD
 # подготовка к сканированию
 function PreScanning(){
 	# выводим линию-разделитель
@@ -225,6 +332,44 @@ function PreScanning(){
 	# создаем список всех файлов в указанной директории
 	Create_Lists
 
+=======
+# получаем версию базы алгоритмов
+function Get_Step_One_Base_Version(){
+	local temp=`head -n 1 "$step_one_base"`
+
+	if [[ "`echo $temp | grep -w  "STEP_ONE_BASE_VERSION"`" != "" ]];then
+		STEP_ONE_BASE_VERSION=${temp#*=}
+	fi
+>>>>>>> 6dd81d9f946f402dd734075cd2a78da37dfcd307
+}
+
+
+#-------------------------------------------------------------------------
+
+# обрабатываем базу алгоритмов поиска, сохраняем информацию в ОЗУ
+function Step_One_Read_Base(){
+	IFS=
+	local trigger=0
+	while read -r str_base; do
+		# отсеить строку с версией базы
+		if [[ "`echo $str_base | grep 'STEP_ONE_BASE_VERSION'`" == "" && "$str_base" != "" ]];then
+			# сортируем данные алгоритма по массивав
+			if [[ $trigger -eq 0 ]]; then
+				array_split_ID[$count_algorithm]=`echo $str_base | awk '{split($0,a,"##"); print a[1]}'`
+				array_split_TEXT[$count_algorithm]=`echo $str_base | awk '{split($0,a,"##"); print a[2]}'`
+				array_split_SCORE[$count_algorithm]=`echo $str_base | awk '{split($0,a,"##"); print a[3]}'`
+				
+				trigger=1
+			else
+				array_split_CODE[$count_algorithm]="$str_base"
+				
+				count_algorithm=$(( $count_algorithm+1 ))
+				trigger=0
+			fi
+		fi
+	done < "$step_one_base"
+	
+	IFS=$DEF_IFS
 }
 
 #-------------------------------------------------------------------------
@@ -250,7 +395,13 @@ function Create_List_All_Files(){
 
 	count_all_files=`wc -l "$list_all_files" | awk '{print $1}'`
 	
+<<<<<<< HEAD
 	# claf1 = Количество сканируемых файлов
+=======
+	count_all_files=`wc -l "$list_all_files" | awk '{print $1}'`
+	
+	# text: Количество сканируемых файлов
+>>>>>>> 6dd81d9f946f402dd734075cd2a78da37dfcd307
 	Print_String "$(Design "BOLD" "$claf1:") $(Design "MB" "$count_all_files")"
 }
 
@@ -266,6 +417,123 @@ function Create_List_Files_With_Php_Code(){
 	
 	# text: Количество файлов с расширением, допускающим использование PHP кода
 	Print_String "$(Design "BOLD" "$clfwpc1:") $(Design "MB" "$count_files_with_php_code")"
+<<<<<<< HEAD
+}
+
+
+#-------------------------------------------------------------------------
+
+function Clear_Temp_File(){
+	rm -f $list_gc
+=======
+	
+	# если в конфиге включена проверка по всем файлам
+	if [[ "$PHP_NOPHP" == "TRUE" ]]; then
+		
+		### progress bar ###
+		local progress_bar_count=0
+		local result=0
+		
+		while read file_path; do
+			# обновляем progress bar
+			progress_bar_count=$(( $progress_bar_count+1 ))
+			echo -ne "\r$(Design "BOLD" "$clfwpc2:") [$progress_bar_count/$count_all_files] $(Design "MB" "$result")"
+			
+			if [[ "`echo $file_path |egrep -i "*\.php$|*\.phps$|*\.phtml$|*\.php4$|*\.php5$|*\.htm$|*\.html$|*\.pl$"`" == "" ]] && [[ "`grep -ilsr '<?php' "$file_path"`" != "" ]]; then
+				
+				# обновляем progress bar
+				result=$(( $result+1 ))
+				echo -ne "\r$(Design "BOLD" "$clfwpc2:") [$progress_bar_count/$count_all_files] $(Design "MB" "$result")"
+				
+				echo "$file_path" >> "$list_files_with_php_code"
+				echo "$file_path:1:PHP-NOPHP" >> "$total_scan_result"
+			fi
+		done < "$list_all_files"
+		
+		echo -ne "\r$(Design "BOLD" "$clfwpc2:") $(Design "MB" "$result")                                         \n"
+					
+		count_files_with_php_code=$(( $count_files_with_php_code+$result ))
+		
+		# выводим информацию:
+		# clfwpc2=Количество файлов с расширением, НЕ допускающим использование PHP кода, но содержащие его
+		
+		Print_Separator
+	fi
+}
+
+#-------------------------------------------------------------------------
+
+# запускаем сканирование
+function Search_Virus(){
+	IFS=
+	
+	# по очереди проходим по всем алгоритмам поиска
+	for (( i=0; i < count_algorithm; i++ )); do
+		
+		local result=0
+		
+		# вывод информации о заголовке
+		Print_String "\n$(Design "BOLD" "[$(( $i+1 ))/$count_algorithm] ") $(Design "MB" "${array_split_ID[$i]}")"
+		Print_String "$(Design "BOLD" "${array_split_TEXT[$i]}:")"
+		Print_Separator
+		
+		# временный файл для хранения результатов текущего алгоритма
+		local current_id_result_file="/tmp/${array_split_ID[$i]}_${_START_SCAN}"
+		Create_Files $current_id_result_file
+		
+		# проверяем все файлы по очереди
+		local progress_bar_count=0
+		while read file_path; do
+			### progress bar ###
+			progress_bar_count=$(( $progress_bar_count+1 ))
+			# sv1=Проверяется файл
+			# sv2=из
+			echo -ne "\r$sv1 $progress_bar_count $sv2 $count_files_with_php_code [$(Design "MB" "$result")]"
+			
+			temp_result=`eval ${array_split_CODE[i]}`
+			# если в проверяемом файле найдена искомая комбинация
+			if [[ "$temp_result" != "" ]]; then
+				# обновляем progress bar
+				result=$(( $result+1 ))
+				echo -ne "\r$sv1 $progress_bar_count $sv2 $count_files_with_php_code [$(Design "MB" "$result")]"
+				
+				# то добавляем его во временный файл:
+				echo "$file_path" >> $current_id_result_file
+				
+				# и проверяем, есть ли этот файл среди уже "пойманных"
+				string_result=`grep "$file_path" $total_scan_result`
+				if [[ "$string_result" != "" ]]; then
+					old_score=`echo $string_result | awk '{split($0,a,":"); print a[2]}'`
+					new_score=$(( $old_score+${array_split_SCORE[$i]} ))
+					
+					# экранируем слэш в строке
+					file_path=`echo $file_path | sed 's|/|\\\/|g'`
+					# и суммируем баллы
+					sed -i "s/^$file_path:$old_score:/$file_path:$new_score:${array_split_ID[$i]}\ /g" $total_scan_result			
+				else # если нет, то добавляем
+					echo "$file_path:${array_split_SCORE[$i]}:${array_split_ID[$i]}" >> $total_scan_result
+				fi
+			fi
+		done < "$list_files_with_php_code"
+		
+		local  current_id_result=`cat $current_id_result_file`
+		if [[ "$current_id_result" != "" ]]; then
+			
+			# sv3=Файлы, содержащие данную уязвимость
+			Print_String "\n$(Design "RB" "$sv3:")"
+			Print_String "$current_id_result"
+			
+		else
+			
+			# sv4=Файлы, содержащие данную уязвимость, не найдены
+			Print_String "\n$(Design "GNB" "$sv4.")"
+		fi
+		Print_String ""
+
+	done
+	
+	IFS=$DEF_IFS
+>>>>>>> 6dd81d9f946f402dd734075cd2a78da37dfcd307
 }
 
 
@@ -327,6 +595,7 @@ shift $(($OPTIND - 1))
 
 ### main #########################################################################################
 
+<<<<<<< HEAD
 # touch $total_scan_result
 Create_Files $list_all_files $list_files_with_php_code 
 
@@ -364,12 +633,22 @@ all)
 ;;
 esac
 
+=======
+touch $total_scan_result
+Create_Files $list_all_files $list_files_with_php_code 
+
+# первый этап - сканирование
+Step_One
+
+
+>>>>>>> 6dd81d9f946f402dd734075cd2a78da37dfcd307
 Print_Separator
 
 # main2=сканирование завершено
 Print_String "$(date +%Y-%m-%d_%H-%M-%S): $main2."
 
 # main3=Файл с результатами сканирования
+<<<<<<< HEAD
 # Print_String "\n$(Design "BOLD" "$main3:")"
 # echo $total_scan_result
 
@@ -378,6 +657,17 @@ Print_Separator
 
 echo $list_gc | tr " " "\n"
 
+=======
+Print_String "\n$(Design "BOLD" "$main3:")"
+echo $total_scan_result
+
+
+Print_String "\n$main4:"
+Print_Separator
+
+echo $list_gc | tr " " "\n"
+
+>>>>>>> 6dd81d9f946f402dd734075cd2a78da37dfcd307
 Clear_Temp_File
 
 exit 0
