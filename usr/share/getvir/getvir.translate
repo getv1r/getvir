@@ -11,95 +11,209 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+####################################################################################
+
+
+
+
+#change language
 
 case $LANGUAGE in
+# русский: ######################################################################################################
 ru)
-	help="Использование: getvir [ОПЦИЯ] [АРГУМЕНТ]
-По умолчанию происходит сканирование в текущем каталоге с включенной опцией -c (поиск критических уязвимостей).
-Пример: getvir -m -d /var/www -L
 
-Выбор уровня сканирования:
-  -c                  critical level. Поиск критических уязвимостей. По умолчанию включен.
-  -m                  medium level. Поиск опасного кода. По умолчанию выключен.
-  -l                  low level. Поиск подозрительного кода. По умолчанию выключен.
-  -z                  zero level. Поиск тестовыми сигнатурами. По умолчанию выключен.
-  -I [signature_ID]   сканирование указанной сигнатурой.
 
-Фильтры поиска:
+############ function help()
+	help="Использование: getvir [ПУТЬ] [ОПЦИЯ] [АРГУМЕНТ]
+По умолчанию происходит вывод справки.
+
+Пример: ./getvir.sh /var/www -t 30
+
+Фильтр поиска:
   -t [days]           фильтр по времени изменения файлов. В качестве аргумента указывается количество дней.
-  -d [patch]          путь для проверки. Поддерживаются относительные и абсолютные пути.
-
-Управление выводом:
-  -L                  логирование процесса сканирования. По умолчанию выключено.
   
 Разное:
   -h                  вывод справки на экран."
+############ end function help()
 
-	php001="создание списка PHP файлов."
-	php002="PHP файлов не найдено!"
+############ function PreScanning()
+	ps1="Подгатовка к сканированию"
+	ps2="Путь для проверки"
+	ps3="Версия базы алгоритмов поиска"
+	ps4="Количество алгоритмов поиска"
+############ end function PreScanning()
 
-	js001="создание списка JavaScript файлов."
-	js002="JavaScript файлов не найдено!"
+	
+############ function Step_One()
+	so1="начало работы программы"
+	so2="ЭТАП 1"
+	so3="проверка файлов"
+############ end function Step_One()
 
-	ht001="создание списка .htaccess файлов."
-	ht002=".htaccess файлов не найдено!"
+############ function Step_Two()
+	
+############ end function Step_Two()
+	
+############ function Step_Two_Print_Titul()
+	stpt1="ЭТАП 2"
+	stpt2="обработка результатов"
+############ end function Step_Two_Print_Titul()
+	
+############ function Create_List_All_Files()
+	claf1="Количество сканируемых файлов"
+############ end function Create_List_All_Files()
 
-	tpl001="создание списка *.tpl файлов."
-	tpl002="*.tpl файлов не найдено!"
+	
+############ function Create_List_Files_With_Php_Code()
+	clfwpc1="Количество файлов с расширением, допускающим использование PHP кода"
+	clfwpc2="Количество файлов с расширением, НЕ допускающим использование PHP кода, но содержащие его"
+############ end function Create_List_Files_With_Php_Code()
+	
+	
+############ function Search_Virus()
+	sv1="Проверяется файл"
+	sv2="из"
+	sv3="Файлы, содержащие данную уязвимость"
+	sv4="Файлы, содержащие данную уязвимость, не найдены"
+############  end function Search_Virus()
 
-	base001="База сигнатур повреждена. Уровень сканирования"
-	base002="не существует."
+	
+############ main()
+	main2="сканирование завершено"
+	main3="Файл с результатами сканирования"
+	main4="Удаление временных файлов"
+############ end main()
 
-	check001="Неверный аргумент"
-	check002="для опции"
-
-	log001="Результат сканирования записан в файл логирования:"
-
-	all001="выполнено."
-	all002="Начало сканирования."
-	all004="начало работы программы."
-	all005="сканирование завершено."
-	all006="Найдено файлов:"
+############ classic_method_main()
+	cmm1="Выбран метод сканирования"
+	cmm2=""
+	cmm3=""
+############ end classic_method_main()
+	
 ;;
 
-##################################################################################
 
+# english: ######################################################################################################
 en)
-	help="Options:
-  -h   displays help getvir.
-  -t [days]   english translate.
-  -t [days]   the last time the file changes.
-  -c   enable / disable scan at the level of CRITICAL.
-  -m   enable / disable scan at the level of MEDIUM.
-  -l   enable / disable scan at the level of LOW.
-  -z   enable / disable scan at the level of ZERO.
-  -L   enable / disable the creation of the log.
-  -I [signature_ID]   scan the specified signature."
+############ function help()
+help=""
+############ end function help()
 
-	php001="create a list of JavaScript files."
-	php002="PHP files not found!"
 
-	js001="create a list of PHP files."
-	js002="JavaScript files not found!"
+############ function Start_Scanning()
+ss1=""
+ss2=""
+ss3=""
+ss4=""
+############ end function Start_Scanning()
 
-	ht001="create a list of .htaccess files."
-	ht002=".htaccess files not found!"
 
-	tpl001="create a list of *.tpl files."
-	tpl002="*.tpl files not found!"
+############ function Create_List_All_Files()
+claf1=""
+############ end function Create_List_All_Files()
 
-	base001="Signature database is corrupted. Level"
-	base002="does not exist."
 
-	check001="Unknow argument"
-	check002="for option"
+############ function Create_List_Files_With_Php_Code()
+clfwpc1=""
+clfwpc2=""
+############ end function Create_List_Files_With_Php_Code()
 
-	log001="The result of the scan is recorded in the file:"
 
-	all001="completed."
-	all002="Start scanning."
-	all004="getting started."
-	all005="scanning completed."
-	all006="Found files:"
+############ function Search_Virus()
+sv1=""
+sv2=""
+sv3=""
+sv4=""
+############  end function Search_Virus()
+
+
+############ main()
+main1=""
+main2=""
+main3=""
+############ end main()
 ;;
+
+# беларускi: ######################################################################################################
+by)
+############ function help()
+help=""
+############ end function help()
+
+
+############ function Start_Scanning()
+ss1=""
+ss2=""
+ss3=""
+ss4=""
+############ end function Start_Scanning()
+
+
+############ function Create_List_All_Files()
+claf1=""
+############ end function Create_List_All_Files()
+
+
+############ function Create_List_Files_With_Php_Code()
+clfwpc1=""
+clfwpc2=""
+############ end function Create_List_Files_With_Php_Code()
+
+
+############ function Search_Virus()
+sv1=""
+sv2=""
+sv3=""
+sv4=""
+############  end function Search_Virus()
+
+
+############ main()
+main1=""
+main2=""
+main3=""
+############ end main()
+;;
+
+# українська: ######################################################################################################
+ua)
+############ function help()
+help=""
+############ end function help()
+
+
+############ function Start_Scanning()
+ss1=""
+ss2=""
+ss3=""
+ss4=""
+############ end function Start_Scanning()
+
+
+############ function Create_List_All_Files()
+claf1=""
+############ end function Create_List_All_Files()
+
+
+############ function Create_List_Files_With_Php_Code()
+clfwpc1=""
+clfwpc2=""
+############ end function Create_List_Files_With_Php_Code()
+
+
+############ function Search_Virus()
+sv1=""
+sv2=""
+sv3=""
+sv4=""
+############  end function Search_Virus()
+
+
+############ main()
+main1=""
+main2=""
+main3=""
+############ end main()
+;;
+
 esac

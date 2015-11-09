@@ -1,0 +1,55 @@
+CM_BASE_VERSION=GV-20150528-2320
+
+PHP-EVAL01##Используется потенциально опасная функции eval()##1
+grep -Eni 'eval([[:space:]])*\(' $file_path
+
+PHP-BS6401 PHP-EVAL01##поиск функции декодирования алгоритмом base64##1
+grep -Eni 'base64_decode([[:space:]])*\(' $file_path
+
+PHP-EVAL04##поиск выполнения загрузки файлов на сервер через eval()##1
+grep -Eni 'eval([[:space:]])*\(([[:space:]])*\$_POST\[' $file_path
+
+PHP-GZ0001##поиск функций выполняющих дикопрессию##1
+grep -Eni 'gzuncompress([[:space:]])*\(|gzinflate([[:space:]])*\(' $file_path
+
+PHP-SHEL01##поиск функции исполнения Shell-скрипта##1
+grep -Eni 'shell_exec([[:space:]])*\(' $file_path
+
+PHP-ALL001 PHP-EVAL01##поиск длинных строк (>=200 символов)##1
+cat "$file_path" | tr '\n' ' ' | sed -e 's/\.\s*//g' | grep -Eo '[^\ ]{200,}'
+
+PHP-ALL002##поиск потенциально опасных функций require(), require_once(), include(), include_once() - возможно подключение файла с вредоносным кодом##1
+grep -Eni 'require_once([[:space:]])*\(|require([[:space:]])*\(|include_once([[:space:]])*\(|include([[:space:]])*\(' $file_path
+
+PHP-ALL003##поиск потенциально опасных функций usort(), uasort(), uksort() - возможно скрытое выполнение кода##1
+grep -Eni 'usort([[:space:]])*\(|uasort([[:space:]])*\(|uksort([[:space:]])*\(' $file_path
+
+PHP-STRT01##поиск функции кодирования / декодирования алгоритмом str_rot13##1
+grep -Eni 'str_rot13([[:space:]])*\(' $file_path
+
+PHP-CRFN01##поиск потенциально опасной функции create_function()##1
+grep -Eni 'create_function([[:space:]])*\(' $file_path
+
+PHP-EXTR01##поиск передачи параметров через функцию extract($_REQUEST)##1
+grep -Eni 'extract([[:space:]])*\(([[:space:]])*\$_REQUEST' $file_path
+
+PHP-PRRP01##поиск потенциально опасной функции preg_replace()##1
+grep -Eni 'preg_replace([[:space:]])*\(' $file_path
+
+PHP-PRRP03 PHP-PRRP01##поиск e модификатора '/.*/e', используемого для выполнения кода в функции preg_replace()##1
+grep -n "[\"|']\/\.\*\/e[\"|']" $file_path
+
+PHP-PRRP05##поиск потенциально опасной функции preg_replace_callback()##1
+grep -Eni 'preg_replace_callback([[:space:]])*\(' $file_path
+
+PHP-PRRP06 PHP-PRRP05##поиск модификатора '/.*/', используемого для выполнения кода в функции preg_replace_callback()##1
+grep -n "[\"|']\/\.\*\/[\"|']" $file_path
+
+PHP-FGET01##поиск потенциально опасной функции file_get_contents()##1
+grep -Eni 'file_get_contents([[:space:]])*\(' $file_path
+
+PHP-ASRT01##поиск потенциально опасной функции assert() - возможно скрытое выполнение кода##1
+grep -Eni 'assert([[:space:]])*\(' $file_path
+
+PHP-ARMP01##поиск потенциально опасной функции array_map()##1
+grep -Eni 'array_map([[:space:]])*\(' $file_path

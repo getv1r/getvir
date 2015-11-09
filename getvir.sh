@@ -1,4 +1,6 @@
 #!/bin/bash 
+# getvir.sh - основной "управляющий" скрипт программы.
+
 
 # Copyright 2015 getvir.org e-mail: dev@getvir.org
 #
@@ -16,75 +18,80 @@
 
 ####################################################
 ##                                                ##
-##                    GETVIR.                     ##
+##                    #getvir.                    ##
 ##  Anti-malware software solution for websites.  ##
 ##                                                ##
 ##  website: getvir.org   email: dev@getvir.org   ##
 ##                                                ##
 ####################################################
 
-ABSOLUTE_FILENAME=`readlink -e "$0"`
-DIRECTORY=`dirname "$ABSOLUTE_FILENAME"`
 
-declare -r _VERSION="\033[1mGETVIR version 0.5 by GETVIR.ORG\033[0m"
+#константы
+declare -r _VERSION="getvir scanner version 0.6 by GETVIR.ORG"
 declare -r _START_SCAN="$(date +%Y-%m-%d_%H-%M-%S)"
-
-
-# Default scanning path ( option -d ).
-_PATH=$DIRECTORY
-# Root directory of log files.
-dir_log="$DIRECTORY/var/log/getvir"
-# Root directory of signatures database.
-getvir_base="$DIRECTORY/usr/share/getvir/getvir.base"
-# The path to the Localization file.
-lang_path="$DIRECTORY/usr/share/getvir/getvir.translate"
-
-# Enable config file
-source "$DIRECTORY/etc/getvir.conf"
-# Enable Localizatio file
-source "$lang_path"
-
-_BASE_VERSION="NOT FOUND"
-
 declare -r DEF_IFS=$IFS		# Saving IFS default values ( '\t\n' ).
 
-# Сritical level signatures.
-declare -a critical_base_uid
-declare -a critical_base_name
-declare -a critical_base_code
-# Medium level signatures.
-declare -a medium_base_uid
-declare -a medium_base_name
-declare -a medium_base_code
-# Low level signatures.
-declare -a low_base_uid
-declare -a low_base_name
-declare -a low_base_code
-# Zero level signatures.
-declare -a zero_base_uid
-declare -a zero_base_name
-declare -a zero_base_code
+ABSOLUTE_FILENAME=`readlink -e "$0"`	# абсолютный путь к исполняемому файлу сканера
+DIRECTORY=`dirname "$ABSOLUTE_FILENAME"`	#абсолютный путь к каталогу с исполняемым файлом
+
+
+_PATH=$DIRECTORY	# Default scanning path.
+
+STEP_TWO_BASE_VERSION="NOT FOUND"
+dir_log="$DIRECTORY/var/log/getvir" # Root directory of log files.
+
+step_two_base="$DIRECTORY/usr/share/getvir/step_two.base"	# Root directory of step two database.
+lang_path="$DIRECTORY/usr/share/getvir/getvir.translate"	# The path to the Localization file.
+
+getvir_config="$DIRECTORY/etc/getvir.conf"
+
+# загрузка конфига
+source "$getvir_config"	# Enable config file
+source "$lang_path"	# Enable Localization file
+
+# список переменных, хранящих имена временных файлов:
+declare -r list_all_files="/tmp/getvir_${_START_SCAN}_list_all_files"
+declare -r list_files_with_php_code="/tmp/getvir_${_START_SCAN}_list_files_with_php_code"
+declare -r total_scan_result="$dir_log/${_START_SCAN}_total_scan_result"
+
+
+# переменная, хранящая пути к временным файлам
+list_gc=""
+
+# файлс результатом сканирования:
+
+
+
+
+################################################################################################################
+# вспомогательный функционал
+################################################################################################################
+
+# создаём нужные файлы
+function Create_Files(){
+	touch $*
+	Add_GC $*
+}
+
+#-------------------------------------------------------------------------
+
+# добавляем файлы в сборщик мусора
+function Add_GC(){
+	list_gc+=" $*"
+}
 
 #-------------------------------------------------------------------------
 
 # Show getvir command-line options.
 function Print_Help() {
-	echo -e "\033[1m$_VERSION\033[0m\n"
-	tput sgr0
+	Greeting
+	
 	echo -e "$help"
 }
 
 #-------------------------------------------------------------------------
 
-# Check options 
-if [[ $# = 0 && $critical = FALSE && $medium = FALSE && $low = FALSE && $zero = FALSE ]]; then
-	Print_Help
-	exit 0
-fi
-
-#-------------------------------------------------------------------------
-
-# Output text on the screen. Write text to a file log file. (write a log file)
+# Output text on the screen.
 function Print_String() {
 	echo -e "$1"
 	# If logging is enabled..
@@ -97,313 +104,193 @@ function Print_String() {
 	fi
 } 
 
+################################################################################################################
+# Функции оформления
+################################################################################################################
+
 #-------------------------------------------------------------------------
 
-# Find .php files.
-function Php_List(){
-	IFS=$'\n'
-	local count_files=0
+# выводим на экран линию-разделитель
+function Print_Separator(){
+	Print_String "$(Design "RB" "-------------------------------------------------------------------------------------")"	
+}
 
-	Print_String "[$(date +%Y/%m/%d\ %H:%M:%S)]: $php001"
-	# If the argument of the -t option is specified and is correct.
+#-------------------------------------------------------------------------
+
+# выводим на экран линию-разделитель
+function Print_Separator_Two(){
+	Print_String "$(Design "RB" "=====================================================================================")"	
+}
+
+#-------------------------------------------------------------------------
+
+# возвращаем форматированную строку
+function Design(){
+	case "$1" in
+	"DEF") # default
+	echo -e "\e[1m$2\033[0m"
+	;;
+	
+	"BOLD") # bold font
+	echo -e "\e[1m$2\033[0m"
+	;;
+	
+	"R") # red
+	echo -e "\e[0;31m$2\e[0m"
+	;;
+	
+	"RB") # red-bold
+	echo -e "\e[1;31m$2\e[0m"
+	;;
+	
+	"GN") # green
+	echo -e "\e[0;32m$2\e[0m"
+	;;
+	
+	"GNB") # green-bold
+	echo -e "\e[1;32m$2\e[0m"
+	;;
+	
+	"Y") # yellow
+	echo -e "\e[0;33m$2\e[0m"
+	;;
+	
+	"YB") # yellow-bold
+	echo -e "\e[1;33m$2\e[0m"
+	;;
+	
+	"BE") # blue
+	echo -e "\e[0;34m$2\e[0m"
+	;;
+	
+	"BEB") # blue-bold
+	echo -e "\e[1;34m$2\e[0m"
+	;;
+	
+	"M") # magenta
+	echo -e "\e[0;35m$2\e[0m"
+	;;
+	
+	"MB") # magenta-bold
+	echo -e "\e[1;35m$2\e[0m"
+	;;
+	
+	"C") # cyan
+	echo -e "\e[0;36m$2\e[0m"
+	;;
+	
+	"CB") # cyan-bold
+	echo -e "\e[1;36m$2\e[0m"
+	;;
+	
+	"W") # white
+	echo -e "\e[0;37m$2\e[0m"
+	;;
+	
+	"WB") # white-bold
+	echo -e "\e[1;37m$2\e[0m"
+	;;
+	esac
+}
+
+#-------------------------------------------------------------------------
+
+# 
+function Progress_Bar_One(){
+	# sv1="Проверяется файл"; sv2="из"
+	echo -ne "\r$sv1 $1 $sv2 $2 [$(Design "MB" "$3")]"
+}
+
+#-------------------------------------------------------------------------
+
+# 
+function Progress_Bar_Two(){
+	exit 0
+}
+
+
+################################################################################################################
+# 
+################################################################################################################
+
+function Greeting(){
+	# выводим приветствие
+	
+	Print_String "\n $(Design "BOLD" "#")   #"
+	Print_String "$(Design "BOLD" "#######")"
+	Print_String " $(Design "BOLD" "#")   #  $(Design "BOLD" "$_VERSION")"
+	Print_String " $(Design "BOLD" "#")   #  $(Design "RB" "===================================")"
+	Print_String "#$(Design "BOLD" "#")#####"
+	Print_String " $(Design "BOLD" "#")   #\n"
+	
+# 	Print_String "\n$(Design "BOLD" "$_VERSION")\n$(Design "RB" "===================================")\n"
+}
+
+#-------------------------------------------------------------------------
+
+# подготовка к сканированию
+function PreScanning(){
+	# выводим линию-разделитель
+	Print_Separator
+	
+	# ps1=Подгатовка к сканированию
+	Print_String "$(Design "BOLD" "$ps1:")\n"
+	# ps2=Путь для проверки
+	Print_String "$(Design "BOLD" "$ps2:")\n$(Design "MB" "$_PATH")"
+	
+	# создаем список всех файлов в указанной директории
+	Create_Lists
+
+}
+
+#-------------------------------------------------------------------------
+
+# создаем все необходимые списки
+function Create_Lists(){
+	# список всех объектов для проверки, удовлетворяющих начальным условиям
+	Create_List_All_Files
+	# список файлов содержащих и способных содержать PHP код
+	Create_List_Files_With_Php_Code
+}
+
+#-------------------------------------------------------------------------
+
+# список всех объектов для проверки, удовлетворяющих начальным условиям
+function Create_List_All_Files(){
+	# если задан промежуток времени
 	if [[ $mtime > 0 ]];then
-		for a in `find $_PATH -mtime -$mtime -daystart -type f -regex ".*\.\(php\|phps\|phtml\|php4\|php5\|htm\|html\)"`; do
-			PHP_LIST+="$a#"
-			let "count_files += 1"
-		done
+		find $_PATH -mtime -$mtime -type f >> "$list_all_files"rm -f 
 	else
-		for a in `find $_PATH -type f -regex ".*\.\(php\|phps\|phtml\|php4\|php5\|htm\|html\)"`;do
-			PHP_LIST+="$a#"
-			let "count_files += 1"
-		done
+		find $_PATH -type f >> "$list_all_files"
 	fi
+
+	count_all_files=`wc -l "$list_all_files" | awk '{print $1}'`
 	
-	# Files are not found?
-	if [[ -n "$PHP_LIST" ]]; then
-		Print_String "[$(date +%Y/%m/%d\ %H:%M:%S)]: $all001 $all006 $count_files.\n-------------------------------------------------------------------------------------\n"
-	else
-		echo -e "$php002\n-------------------------------------------------------------------------------------\n"
-	fi
-	
-	IFS=$DEF_IFS
+	# claf1 = Количество сканируемых файлов
+	Print_String "$(Design "BOLD" "$claf1:") $(Design "MB" "$count_all_files")"
 }
 
 #-------------------------------------------------------------------------
 
-# Get signatures from databases and sort by levels.
-function Processing_Base(){
-	# Change IFS character.
-	IFS=$'#'
+# список файлов содержащих и способных содержать PHP код
+function Create_List_Files_With_Php_Code(){
+	# фильтруем список по типу файлов
+	egrep -i "*\.php$|*\.phps$|*\.phtml$|*\.php4$|*\.php5$|*\.htm$|*\.html$|*\.pl$" $list_all_files >> "$list_files_with_php_code"
 	
-	# Line counters.
-	Crt_Rows=0
-	Med_Rows=0
-	Low_Rows=0
-	Zero_Rows=0
+	# выводим информацию:
+	count_files_with_php_code=`wc -l "$list_files_with_php_code" | awk '{print $1}'`
 	
-	Print_String "[$(date +%Y/%m/%d\ %H:%M:%S)]:загрузка базы сигнатур."
-
-	# Read from signatures database.
-	while read -r uid name code level; do
-		if [[ -z $uid && -z $name && -z $code ]]; then
-			continue; # LICENSE
-		fi
-		if [[ -z $uid && -z $name && -z $level ]]; then
-			_BASE_VERSION=$code
-			Print_String "Версия: $_BASE_VERSION."
-		else
-			case $level in
-			3) # This is critical level.
-			critical_base_uid[$Crt_Rows]="$uid"
-			critical_base_name[$Crt_Rows]="$name"
-			critical_base_code[$Crt_Rows]="$code"
-			let "Crt_Rows += 1"
-			;;
-			2) # This is medium level.
-			medium_base_uid[$Med_Rows]="$uid"
-			medium_base_name[$Med_Rows]="$name"
-			medium_base_code[$Med_Rows]="$code"
-			let "Med_Rows += 1"
-			;;
-			1) # This is low level.
-			low_base_uid[$Low_Rows]="$uid"
-			low_base_name[$Low_Rows]="$name"
-			low_base_code[$Low_Rows]="$code"
-			let "Low_Rows += 1"
-			;;
-			0) # This is test level.
-			zero_base_uid[$Zero_Rows]="$uid"
-			zero_base_name[$Zero_Rows]="$name"
-			zero_base_code[$Zero_Rows]="$code"
-			let "Zero_Rows += 1"
-			;;
-			*) echo -e "\033[1m$base001 \"\E[31m$level\033[0m\033[1m\" $base002\033[0m\n-------------------------------------------------------------------------------------\n"
-			;;
-			esac
-			
-			# If you need to check the signature and indicated it found.
-			if [[ -n $check_ID && "$uid" == "$check_ID" ]]; then
-				check_name="$name"
-				check_code="$code"
-				check_ID_status="TRUE"
-				break
-			fi
-		fi
-	done < "$getvir_base"
-
-	local count_sign=0
-	let "count_sign += $Crt_Rows + $Med_Rows + $Low_Rows + $Zero_Rows"
-	Print_String "Количество сигнатур: $count_sign ."
-	Print_String "[$(date +%Y/%m/%d\ %H:%M:%S)]:выполнено.\n-------------------------------------------------------------------------------------\n"
-	# IFS assign the default value.
-	IFS=$DEF_IFS
+	# text: Количество файлов с расширением, допускающим использование PHP кода
+	Print_String "$(Design "BOLD" "$clfwpc1:") $(Design "MB" "$count_files_with_php_code")"
 }
+
 
 #-------------------------------------------------------------------------
 
-# CRITICAL level 
-function Search_Critical(){
-	# Change IFS character.
-	IFS=$'#'
-	Print_String "\033[1mCRITICAL level. $all002\033[0m\n-------------------------------------------------------------------------------------"
-	for((i=0;i<$Crt_Rows;i++)); do
-		local date_time="[$(date +%Y/%m/%d\ %H:%M:%S)]:"
-		local uid="${critical_base_uid[$i]}"
-		local name="${critical_base_name[$i]}"
-		local code=`eval ${critical_base_code[$i]}`
-		# If files are found.
-		if [ -n "$code" ];then
-			# Add separator.
-			code=`echo -e "$code" | sed '/^$/d;G'`
-			# Output scan result.
-			local display="\033[1m${date_time} $uid $name: \n[\E[31mTRUE\033[0m\033[1m]\033[0m\n$code\n"
-			local log_write="${date_time} $uid $name: \n[TRUE]\n$code\n"
-			Print_String $display $log_write
-			tput sgr0
-		else
-			local display="\033[1m${date_time} $uid $name:\n[\E[32mFALSE\033[0m\033[1m]\033[0m\n"
-			local log_write="${date_time} $uid $name:\n[FALSE]\n"
-			Print_String $display $log_write 
-			tput sgr0
-		fi
-	done
-	# IFS assign the default value.
-	IFS=$DEF_IFS
+function Clear_Temp_File(){
+	rm -f $list_gc
 }
 
-#-------------------------------------------------------------------------
-
-# MEDIUM level 
-function Search_Medium(){
-	# Change IFS character.
-	IFS=$'#'
-	Print_String "\033[1mMEDIUM level. $all002\033[0m\n-------------------------------------------------------------------------------------"
-	for((i=0;i<$Med_Rows;i++)); do
-		local date_time="[$(date +%Y/%m/%d\ %H:%M:%S)]:"
-		local uid="${medium_base_uid[$i]}"
-		local name="${medium_base_name[$i]}"
-		local code=`eval ${medium_base_code[$i]}`
-		# If files are found.
-		if [ -n "$code" ];then
-			# Add separator.
-			code=`echo -e "$code" | sed '/^$/d;G'`
-			# Output scan result.
-			local display="\033[1m${date_time} $uid $name: \n[\E[31mTRUE\033[0m\033[1m]\033[0m\n$code\n"
-			local log_write="${date_time} $uid $name: \n[TRUE]\n$code\n"
-			Print_String $display $log_write
-			tput sgr0
-		else
-			local display="\033[1m${date_time} $uid $name:\n[\E[32mFALSE\033[0m\033[1m]\033[0m\n"
-			local log_write="${date_time} $uid $name:\n[FALSE]\n"
-			Print_String $display $log_write 
-			tput sgr0
-		fi
-	done
-	# IFS assign the default value.
-	IFS=$DEF_IFS
-}
-
-#-------------------------------------------------------------------------
-
-# LOW level 
-function Search_Low(){
-	# Change IFS character.
-	IFS=$'#'
-	Print_String "\033[1mLOW level. $all002\033[0m\n-------------------------------------------------------------------------------------"
-	
-	for((i=0;i<$Low_Rows;i++)); do
-		local date_time="[$(date +%Y/%m/%d\ %H:%M:%S)]:"
-		local uid="${low_base_uid[$i]}"
-		local name="${low_base_name[$i]}"
-		local code=`eval ${low_base_code[$i]}`
-		# If files are found.
-		if [ -n "$code" ];then
-			# Add separator.
-			code=`echo -e "$code" | sed '/^$/d;G'`
-			# Output scan result.
-			local display="\033[1m${date_time} $uid $name: \n[\E[31mTRUE\033[0m\033[1m]\033[0m\n$code\n"
-			local log_write="${date_time} $uid $name: \n[TRUE]\n$code\n"
-			Print_String $display $log_write
-			tput sgr0
-		else
-			local display="\033[1m${date_time} $uid $name:\n[\E[32mFALSE\033[0m\033[1m]\033[0m\n"
-			local log_write="${date_time} $uid $name:\n[FALSE]\n"
-			Print_String $display $log_write 
-			tput sgr0
-		fi
-	done
-	# IFS assign the default value.
-	IFS=$DEF_IFS
-}
-
-#-------------------------------------------------------------------------
-
-# ZERO level 
-function Search_Zero(){
-	# Change IFS character.
-	IFS=$'#'
-	Print_String "\033[1mTESTING level. $all002\033[0m\n-------------------------------------------------------------------------------------"
-	
-	for((i=0;i<$Zero_Rows;i++)); do
-		local date_time="[$(date +%Y/%m/%d\ %H:%M:%S)]:"
-		local uid="${zero_base_uid[$i]}"
-		local name="${zero_base_name[$i]}"
-		local code=`eval ${zero_base_code[$i]}`
-		# If files are found.
-		if [ -n "$code" ];then
-			# Add separator.
-			code=`echo -e "$code" | sed '/^$/d;G'`
-			# Output scan result.
-			local display="\033[1m${date_time} $uid $name: \n[\E[31mTRUE\033[0m\033[1m]\033[0m\n$code\n"
-			local log_write="${date_time} $uid $name: \n[TRUE]\n$code\n"
-			Print_String $display $log_write
-			tput sgr0
-		else
-			local display="\033[1m${date_time} $uid $name:\n[\E[32mFALSE\033[0m\033[1m]\033[0m\n"
-			local log_write="${date_time} $uid $name:\n[FALSE]\n"
-			Print_String $display $log_write 
-			tput sgr0
-		fi
-	done
-	# IFS assign the default value.
-	IFS=$DEF_IFS
-}
-
-# Search indicated signature.
-function Search_By_Check(){
-	# Change IFS character.
-	IFS=$'#'
-	
-	# If the signature found in the database.
-	if [[ $check_ID_status = TRUE ]]; then
-		Print_String "\033[1mScanning selected signature.\033[0m\n-------------------------------------------------------------------------------------"
-		# Scan at indicated signature.
-		local date_time="[$(date +%Y/%m/%d\ %H:%M:%S)]:"
-		check_code=`eval $check_code`
-		# If files are found.
-		if [[ -n $check_code ]];then
-			# Add separator.
-			code=`echo -e "$code" | sed '/^$/d;G'`
-			# Output scan result.
-			local display="\033[1m${date_time} $check_ID $check_name:\n[\E[31mTRUE\033[0m\033[1m]\033[0m\n$check_code\n"
-			local log_write="${date_time} $check_ID $check_name:\n$check_code\n"
-			Print_String $display $log_write
-		else
-			local display="\033[1m${date_time} $check_ID $check_name:\n[\E[32mFALSE\033[0m\033[1m]\033[0m\n"
-			local log_write="${date_time} $check_ID $check_name:\n$check_code\n"
-			Print_String $display $log_write
-		fi
-	else
-		Print_String "Указанная сигнатура не найдена!"
-	fi
-	# IFS assign the default value.
-	IFS=$DEF_IFS
-}
-
-#-------------------------------------------------------------------------
-
-# Start the scan at selected levels.
-function Start_Scanning() {
-	Print_String "\n$_VERSION\n===================================\n\n$_START_SCAN: $all004\n-------------------------------------------------------------------------------------"
-
-	# Creating a list of files to scan.
-	Php_List
-	
-	# Loading signature.
-	Processing_Base
-	if [[ -n $check_ID ]]; then
-		Search_By_Check
-	else
-		if [ $critical = "TRUE" ];then	
-			Search_Critical 
-		fi
-	
-		if [ $medium = "TRUE" ];then
-			Search_Medium
-		fi
-	
-		if [ $low = "TRUE" ];then
-			Search_Low
-		fi
-	
-		if [ $zero = "TRUE" ];then
-			Search_Zero
-		fi
-	fi
-}
-
-#-------------------------------------------------------------------------
-
-# Checking the argument passed with option -d
-function Check_Dir(){
-	if [[ $OPTARG =~ ^-{0,1}[hdtcmlzLI]$ ]]; then
-		echo -e "$OPTARG"
-		echo "$check001 $OPTARG $check002 $opt!"
-		exit 1
-	else
-		_PATH=`readlink -e $OPTARG`
-	fi
-}
 
 #-------------------------------------------------------------------------
 
@@ -416,84 +303,33 @@ function Check_Mtime(){
 
 #-------------------------------------------------------------------------
 
-# Enable / disable the creation of the log (option -L).
-function Create_Log_File(){
-	if [[ $log_enable = "TRUE" ]]; then
-		url_log="$dir_log/getvir_$_START_SCAN.log"
-		echo -e "$data_log" >> $url_log
-		chmod 644 $url_log
-		echo -e "\n$log001\n$url_log"
-	fi
-}
+#################################################################################################
 
+# Check options 
+if [[ $# -eq 0 ]]; then
+	Print_Help
+	exit 0
+	fi
+	
 #-------------------------------------------------------------------------
 
-# Checking the argument passed with option -I
-function Check_ID(){
-	if [[ $OPTARG =~ ^-{0,1}[hdtcmlzLI]$ ]]; then
-		echo -e "$OPTARG"
-		echo "$check001 $OPTARG $check002 $opt!"
-		exit 1
-	else
-		check_ID=$OPTARG
-		check_name=""
-		check_code=""
-		check_ID_status="FALSE"
+# поиск и проверка на валидность пути
+for n in $@; do
+	if [ -d "$n" ]; then
+		_PATH=$n
 	fi
-}
+done
 
-#################################################################################################
-while getopts ":hd:t:cmlzLI:" opt;
+
+while getopts ":ht:" opt;
 do
 	case $opt in
 		h) # Print help screen
 			Print_Help
 			exit 0
 		;;
-		d) # Checking the argument passed to the option -d
-			Check_Dir
-		;;
 		t) # Checking the argument passed to the option -t
 			Check_Mtime
-		;;
-		c) # Enables / disables the check at a critical level.
-			if [[ $critical = "FALSE" ]]
-				then critical="TRUE"
-				else critical="FALSE"
-			fi
-		;;
-		m) # Enables / disables the check at a medium level.
-			if [[ $medium = "FALSE" ]]
-				then medium="TRUE"
-				else medium="FALSE"
-			fi
-		;;
-		l) # Enables / disables the check at a low level.
-			if [[ $low = "FALSE" ]]
-				then low="TRUE"
-				else low="FALSE"
-			fi
-		;;
-		l) # Enables / disables the check at a low level.
-			if [[ $low = "FALSE" ]]
-				then low="TRUE"
-				else low="FALSE"
-			fi
-		;;
-		z) # Enables / disables the check at a zero level.
-			if [[ $zero = "FALSE" ]]
-				then zero="TRUE"
-				else zero="FALSE"
-			fi
-		;;
-		L) # Enable / disable logging file.
-			if [[ $log_enable = "FALSE" ]]
-				then log_enable="TRUE"
-				else log_enable="FALSE"
-			fi
-		;;
-		I)
-			Check_ID
 		;;
 		*) # An invalid option
 			Print_Help
@@ -504,8 +340,60 @@ shift $(($OPTIND - 1))
 
 ##################################################################################################
 
-Start_Scanning
-Print_String "-------------------------------------------------------------------------------------\n$(date +%Y-%m-%d_%H-%M-%S): $all005"
-Create_Log_File
+
+### main #########################################################################################
+
+# touch $total_scan_result
+Create_Files $list_all_files $list_files_with_php_code 
+
+# Сначала поздороваемся 
+Greeting
+# выводим общую начальную информацию
+PreScanning
+
+
+# затем за работу
+case $scanning_method in
+classic)
+	# запускаем сканирование классическим методом
+	source "$DIRECTORY/classic_method.sh"
+;;
+
+# rating)
+# 	# запускаем сканирование на основе рейтинговой системы
+# 	source "$DIRECTORY/rating_method.sh"
+# ;;
+# 
+# all)
+# 	# поочередно сканируем всеми методами.
+# 	source "$DIRECTORY/classic.method.sh"
+# 	source "$DIRECTORY/rating.method.sh"
+# ;;
+
+*)
+	Print_String "Ошибка в конфигурационном файле:\n$getvir_config\n\nНедопустимое значение переменной scanning_method"
+	
+	# удаляем временные файлы
+	Clear_Temp_File
+	# завершаем приложение с ошибкой
+	exit 1
+;;
+esac
+
+Print_Separator
+
+# main2=сканирование завершено
+Print_String "$(date +%Y-%m-%d_%H-%M-%S): $main2."
+
+# main3=Файл с результатами сканирования
+# Print_String "\n$(Design "BOLD" "$main3:")"
+# echo $total_scan_result
+
+Print_String "\n$main4:"
+Print_Separator
+
+echo $list_gc | tr " " "\n"
+
+Clear_Temp_File
 
 exit 0
